@@ -1,0 +1,22 @@
+COPYRIGHT
+MANIFEST			This list of files
+MANIFEST.SKIP
+Makefile.PL
+README
+test.pl
+httpd/httpd.conf
+lib/AxKit/App/Gallery.pm
+lib/AxKit/App/Gallery/Plugin.pm
+lib/AxKit/App/Gallery/Provider.pm
+lib/AxKit/App/Gallery/imagesheet.pod
+lib/AxKit/App/Gallery/proofsheet.pod
+lib/AxKit/App/Gallery/stylesheets.pod
+stylesheets/addconfig.xps
+stylesheets/extractimageinfo.xps
+stylesheets/filelist2proofsheet.xsl
+stylesheets/imagesheet2html.xsl
+stylesheets/mergeimageinfo.xsl
+stylesheets/proofsheet2html.xsl
+stylesheets/scrubfilelist.xps
+stylesheets/sortfilelist.xsl
+stylesheets/trimproofsheet.xps

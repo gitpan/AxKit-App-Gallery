@@ -1,0 +1,53 @@
+AxKit::App::Gallery
+===================
+
+$Id: README,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+
+This is an AxKit based image gallery, using XSLT and XPathScript.  Directory
+hierarchies of images can be placed online with minimal effort.
+
+This is an *alpha* release.  Most of the functionality is here, but it's only
+been lightly tested.  Documentation is probably lacking in some areas, and
+the code generates copious debugging information to the error log.  I do not
+recommend running this code on a production server.
+
+After installing and testing AxKit, proceed as follows.
+
+  * Install the two Perl modules (::Plugin and ::Provider) in the standard
+    Perl fashion.
+
+        perl Makefile.PL
+        make
+        make install
+
+  * Identify the root directory of your image collection.  For example,
+    /usr/local/pictures.
+
+  * Create a directory to store the stylesheets (XSLT and XPathScript) that
+    do the bulk of the transformation.  E.g., /usr/local/share/ax-app-gallery.
+    Copy the contents of the stylesheets/ directory here
+
+        mkdir /usr/local/share/ax-app-gallery
+        cp stylesheets/* /usr/local/share/ax-app-gallery
+
+  * Integrate the contents of httpd/httpd.conf into your Apache configuration
+    file.  See the comments in that file for more details.
+
+  * Restart the webserver
+
+  * As part of the httpd.conf integration you should have created a URL on
+    your website that maps back to the root directory of your image 
+    collection (/usr/local/pictures, or whatever you called it).  Point
+    a web browser at this URL.
+
+    You should be rewarded with a page listing the subdirectories as links.
+    Any images in this root directory should also be present as thumbnails.
+    
+    Clicking on a subdirectory should show you the images and subdirectories
+    it contains.  Clicking on an image should show you a larger version of
+    that image, some information about it, and links to view larger or 
+    smaller versions of the image.
+
+See the documentation in AxKit::App::Gallery for detailed configuration
+information, author contact details, and troubleshooting/debugging
+recommendations.

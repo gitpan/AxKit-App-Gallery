@@ -1,0 +1,133 @@
+<%
+
+# Copyright (c) 2003 Nik Clayton
+# All rights reserved.
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+# 
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+# 
+# $Id: extractimageinfo.xps,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+ 
+# Check the cache directory for each image.  If we've got cached meta data
+# for the image, and it's valid, then do nothing.  Otherwise, extract the
+# data from the image and store it in the image's cache directory.
+
+use strict;
+
+use File::Path;
+use Image::Info qw(image_info);
+use XML::Simple;
+use Data::Dumper;
+
+my $cache_dir = $r->dir_config('GalleryCache');
+
+my($path, $filename, $uri, $cache_path, $imagemodtime, $metafile);
+
+foreach my $image (findnodes('/proofsheet/images/image')) {
+	$path = findvalue('dirpath', $image);
+	$filename = findvalue('filename', $image);
+
+	$uri = join('/', 
+		map { findvalue('text()', $_) } 
+			findnodes('uri/component/u', $image));
+
+	$imagemodtime = findvalue('modified', $image)->value();
+	
+	$cache_path = "$cache_dir/$uri/$filename";
+
+	if(! -d $cache_path) {
+		$r->log_error("Need to make $cache_path");
+		mkpath($cache_path);
+	}
+
+	$metafile = "$cache_path/imageinfo.xml";
+
+	$r->log_error("metafile: $metafile");
+	my $f_meta = -f $metafile;
+	my $z_meta = -z $metafile;
+	my $s_meta = (stat($metafile))[9];
+
+	$r->log_error("f: $f_meta, z: $z_meta, mod: $imagemodtime, s: $s_meta");
+	if(! -f $metafile || -z $metafile 
+	    || ($imagemodtime > (stat($metafile))[9])) {
+
+		$r->log_error("Generating $metafile");
+		my $info = {};
+		$info->{imageinfo} = image_info("$path/$filename");
+
+		if(! $info->{error}) {
+			# Work out the width/height ratio, and calculate
+			# what the generated thumbnail dimensions will be
+			my($w, $h) = ($info->{imageinfo}{width}, $info->{imageinfo}{height});
+			my $larger = $w > $h ? $w : $h;
+			$info->{thumbs}{thumb} = [];
+			foreach my $size (split(/ +/, $r->dir_config('GallerySizes'))) {	
+				next if $size eq 'full';
+				my $sf = $size / $larger;
+				push @{$info->{thumbs}{thumb}}, 
+					{ filename => "$size.jpg",
+						     width => int($w * $sf),
+						     height => int($h * $sf),
+						     size => $size,
+					};
+			}
+
+			$r->log_error('Extracted the image info');
+
+			open(F, "> $metafile");
+
+			# Some of the values in the hash are references
+			# to other objects with stringification methods.
+			# For our purposes we just need the value, so
+			# ensure that everything is stringified
+			foreach (keys %{$info->{imageinfo}}) {
+				# Keys that start 'App' seem to more trouble
+				# than they're worth, containing all sorts
+				# of odd crud.  Just delete them.
+				if($_ =~ /^App/) {
+					delete $info->{imageinfo}{$_};
+					next;
+				}
+
+				# Remove anything with non-printable values
+				$info->{imageinfo}{$_} =~ s/\x00/ /g;
+				if($info->{imageinfo}{$_} =~ /[^[:print:]]/) {
+					delete $info->{imageinfo}{$_};
+					next;
+				}
+				next if ref($info->{imageinfo}{$_}) eq 'ARRAY';
+				next if ref($info->{imageinfo}{$_}) eq 'HASH';
+				
+				$info->{imageinfo}{$_} = "$info->{imageinfo}{$_}";
+			}
+			$r->log_error(Dumper($info));
+
+			print F XMLout($info, noattr => 1, 
+				rootname => 'root',
+				);
+			close(F);
+		}
+	}
+}
+	
+print apply_templates();
+
+%>
