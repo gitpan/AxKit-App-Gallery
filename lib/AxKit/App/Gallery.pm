@@ -24,11 +24,11 @@ package AxKit::App::Gallery;
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 #
-# $Id: Gallery.pm,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+# $Id: Gallery.pm,v 1.5 2004/02/26 14:09:52 nik Exp $
 
 use vars qw/$VERSION/;
 
-$VERSION = 0.4;
+$VERSION = 0.5;
 
 =head1 NAME
 
@@ -83,37 +83,12 @@ which you run the webserver.
 The contents of the F<stylesheets/> directory must be copied to somewhere
 the web server can read them.
 
-=head2 Configuration for the gallery directory
+=head2 httpd.conf directives
 
 The root of the directory hierarchy that contains the images must be
-configured in Apache.  At a minimum, you will need a configuration that
-looks like this:
-
-  <Directory "/path/to/image/gallery/root">
-    Options -All +Indexes
-    SetHandler axkit
-    DirectoryIndex index.xml index.xsp
-    AddHandler axkit .xml .xsp
-
-    # Adjust this setting as necessary -- it's where AxKit keeps its
-    # temporary files.  This is *not* related to ::Gallery's cache
-    # directory described earlier.
-    AxCacheDir /var/tmp
-
-    AxAddXSPTagLib AxKit::XSP::Util
-    AxAddXSPTagLib AxKit::XSP::Param
-
-    AxAddStyleMap text/xsl Apache::AxKit::Language::LibXSLT
-    AxAddStyleMap application/x-xpathscript Apache::AxKit::Language::XPathScript
-
-    AxHandleDirs  On
-
-    AxAddPlugin Apache::AxKit::Plugin::QueryStringCache
-
-    AxAddPlugin AxKit::App::Gallery::Plugin
-    AxContentProvider AxKit::App::Gallery::Provider
-
-  </Directory>
+configured in Apache.  The F<httpd/> directory contains a commented 
+httpd.conf file.  You should add the contents of that file to your Apache
+configuration.
 
 =head2 Configure the gallery
 
@@ -143,7 +118,7 @@ specify how many images to place per page.  The default is C<16>.
 The stylesheets cache the metadata and thumbnails that are generated for
 each image.  Use this variable to specify the cache directory.  Additional
 subdirectories will be created in this directory as necessary.  There is
-not default.
+no default.
 
     PerlSetVar GalleryCache /var/tmp/ax-app-gallery
 
@@ -213,71 +188,9 @@ for more information.
 
     PerlSetVar GalleryThumbQuality preview
 
-=head2 Setting up the proofsheet stylesheets
+=back
 
-The stylesheets must now be associated with the directory, and in the
-correct order.
-
-Copy these lines in to the C<<Directory>> section, addjusting the path to
-the stylesheets as necessary.  The path (C</path/to>) is relative to the
-site's document root, not the root of the filesystem.
-
-    # This removes directories and files that we don't want to process
-    AxAddRootProcessor application/x-xpathscript \
-        /path/to/scrubfilelist.xps \
-        {http://axkit.org/2002/filelist}filelist
-    
-    # Sort the filelist
-    AxAddRootProcessor text/xsl \
-        /path/to/sortfilelist.xsl \
-        {http://axkit.org/2002/filelist}filelist
-     
-    # This converts the filelist to the basic <proofsheet> structure
-    AxAddRootProcessor text/xsl \   
-        /path/to/filelist2proofsheet.xsl \
-        {http://axkit.org/2002/filelist}filelist
-
-    # This trims the proofsheet to just the images and directories
-    # to display, based on the current page number that's being shown,
-    # and the ImagesPerProofSheet variable
-    AxAddRootProcessor application/x-xpathscript \
-        /path/to/trimproofsheet.xps \
-        {http://axkit.org/2002/filelist}filelist
-
-    # This adds additional meta information about the location of
-    # the files and directories to the proofsheet
-    AxAddRootProcessor application/x-xpathscript \
-        /path/to/addconfig.xps \
-        {http://axkit.org/2002/filelist}filelist
-
-    # Extract the image information and store it in the cache
-    # directories
-    AxAddRootProcessor application/x-xpathscript \
-        /path/to/extractimageinfo.xps \
-        {http://axkit.org/2002/filelist}filelist
-
-    # Merge the extracted image info in to the main proofsheet
-    # document
-    AxAddRootProcessor text/xsl \
-        /path/to/mergeimageinfo.xsl \
-        {http://axkit.org/2002/filelist}filelist
-
-    # And finally convert the proofsheet to HTML
-    AxAddRootProcessor text/xsl \
-        /path/to/proofsheet2html.xsl \
-        {http://axkit.org/2002/filelist}filelist
-
-=head2 Setting up the imagesheet stylesheets
-
-Copy these lines in to the C<<Directory>> section, addjusting the path to
-the stylesheets as necessary.  The path (C</path/to>) is relative to the
-site's document root, not the root of the filesystem.
-
-    # -- Processing imagesheets
-    AxAddRootProcessor text/xsl /path/to/mergeimageinfo.xsl imagesheet
-    AxAddRootProcessor text/xsl /path/to/imagesheet2html.xsl imagesheet
-
-=head1 Start Apache, test the URL
+=head1 TESTING
 
 That should be all you need to do.  So restart Apache, and point your web
 browser at the AxKit::App::Gallery enabled URL.

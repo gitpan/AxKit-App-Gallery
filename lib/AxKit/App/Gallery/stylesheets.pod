@@ -22,7 +22,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 # 
-# $Id: stylesheets.pod,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+# $Id: stylesheets.pod,v 1.2 2004/02/25 16:45:59 nik Exp $
  
 =head1 NAME
 
@@ -167,6 +167,8 @@ change the look and feel of the gallery imagesheet pages then this is the
 stylesheet to adjust.
 
 =item imagesheet2html.xsl
+
+=back
 
 =head1 SEE ALSO
 

@@ -25,12 +25,19 @@ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 SUCH DAMAGE.
 
-$Id: proofsheet2html.xsl,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+$Id: proofsheet2html.xsl,v 1.7 2004/02/26 11:58:50 nik Exp $
 -->
  
 <xsl:stylesheet 
   xmlns:xsl="http://www.w3.org/1999/XSL/Transform" 
+  xmlns:exif="http://impressive.net/people/gerald/2001/exif#"
+  xmlns:foaf="http://xmlns.com/foaf/0.1/"
+  xmlns:aag="http://search.cpan.org/~nikc/AxKit-App-Gallery/xml#"
+  xmlns:img="http://www.cpan.org/authors/id/G/GA/GAAS/#"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
   version="1.0">
+
+  <xsl:include href="file:///home/nik/Local-CVS/CPAN/AxKit::App::Gallery/src/stylesheets/breadcrumb.xsl"/>
 
   <xsl:variable name="totalColumns" select="/proofsheet/config/perl-vars/var[@name='ProofsheetColumns']"/>
 
@@ -43,33 +50,28 @@ $Id: proofsheet2html.xsl,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
           </xsl:for-each>
           <xsl:text/> (page <xsl:value-of select="//pages/page[@current]/@number"/>)
         </title>
+        <style type="text/css">
+body {
+  background: #cccccc;
+}
+img {
+  border: 1px solid black;
+}
+        </style>
       </head>
 
       <body>
-        <p>/
-          <xsl:for-each select="/proofsheet/albums/album[name = '.']/uri/component">
-	    <xsl:choose>
-              <xsl:when test="position() != last()">
-            <a>
-              <xsl:attribute name="href">
-                <xsl:for-each select="./preceding-sibling::component">
-                  <xsl:text>/</xsl:text><xsl:value-of select="u"/>
-                </xsl:for-each>
-                <xsl:text>/</xsl:text><xsl:value-of select="u"/>/<xsl:text/>
-              </xsl:attribute>
-              <xsl:value-of select="u"/>
-            </a> / </xsl:when>
-            <xsl:otherwise> <xsl:value-of select="u"/> /</xsl:otherwise>
-            </xsl:choose>
-             
-          </xsl:for-each></p>
-
-	<xsl:apply-templates select="/proofsheet/pages"/>
+        <xsl:call-template name="breadcrumb">
+          <xsl:with-param name="nodes" select="/proofsheet/albums/album[name = '.']/uri/component"/>
+        </xsl:call-template>
+	
+        <xsl:apply-templates select="/proofsheet/pages"/>
 
 	<p><xsl:apply-templates select="//albums"/></p>
 
         <xsl:apply-templates select="/proofsheet/images"/>
 
+        <p align="right"><small>Created with <a href="http://search.cpan.org/~nikc/AxKit-App-Gallery/">AxKit::App::Gallery</a></small></p>
       </body>
     </html>
   </xsl:template>
@@ -121,7 +123,7 @@ $Id: proofsheet2html.xsl,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
         <tr>
           <xsl:for-each select="self::image | 
                 following-sibling::image[$totalColumns > position()]">
-            <td align="center"><xsl:value-of select="filename"/></td>
+            <td align="center"><small><xsl:value-of select="filename"/></small></td>
           </xsl:for-each>
         </tr>
       </xsl:for-each>
@@ -131,13 +133,35 @@ $Id: proofsheet2html.xsl,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
   <xsl:template match="image">
     <xsl:variable name="thumbSize" select="/proofsheet/config/perl-vars/GallerySizes/size[@type = 'thumb']"/>
 
+    <xsl:variable name="height">
+      <xsl:value-of select="rdf:RDF/rdf:Description/foaf:thumbnail[rdf:Description/aag:size = $thumbSize]/rdf:Description/img:height"/>
+    </xsl:variable>
+
+    <xsl:variable name="width">
+      <xsl:value-of select="rdf:RDF/rdf:Description/foaf:thumbnail[rdf:Description/aag:size = $thumbSize]/rdf:Description/img:width"/>
+    </xsl:variable>
+          
     <p><a>
         <xsl:attribute name="href"><xsl:value-of select="filename"/>?format=html</xsl:attribute>
         <img>
           <xsl:attribute name="src"><xsl:value-of select="filename"/>?format=raw;size=thumb</xsl:attribute>
-          <xsl:attribute name="height"><xsl:value-of select="thumbs/thumb[size = $thumbSize]/height"/></xsl:attribute>
-          <xsl:attribute name="width"><xsl:value-of select="thumbs/thumb[size = $thumbSize]/width"/></xsl:attribute>
-	  <xsl:attribute name="border">0</xsl:attribute></img></a></p>
+
+          <xsl:attribute name="border">0</xsl:attribute>
+
+          <xsl:if test="$height">
+            <xsl:attribute name="height">
+              <xsl:value-of select="$height"/>
+            </xsl:attribute>
+          </xsl:if>
+
+          <xsl:if test="$width">
+            <xsl:attribute name="width">
+              <xsl:value-of select="$width"/>
+            </xsl:attribute>
+          </xsl:if>
+        </img>
+      </a>
+    </p>
   </xsl:template>
 
 </xsl:stylesheet>

@@ -2,7 +2,7 @@ package AxKit::App::Gallery::Provider;
 
 # Copyright (c) 2003 Nik Clayton
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -11,7 +11,7 @@ package AxKit::App::Gallery::Provider;
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -23,9 +23,9 @@ package AxKit::App::Gallery::Provider;
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-# 
-# $Id: Provider.pm,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
- 
+#
+# $Id: Provider.pm,v 1.4 2003/11/09 12:33:44 nik Exp $
+
 use Apache::Constants qw(:common);
 use Apache::Request;
 use File::Path;
@@ -33,7 +33,7 @@ use URI;
 use URI::Escape;				# For unescaping URIs
 use Apache::AxKit::Provider::File;
 use Apache::AxKit::Exception;
-use Data::Dumper;
+#use Data::Dumper;
 
 use base qw(Apache::AxKit::Provider::File);
 
@@ -41,14 +41,14 @@ sub get_fh {
 	my $self = shift;
 	my $r    = $self->{apache};
 
-	$r->log_error("get_fh(), r is " . Dumper($r));
+#	$r->log_error("get_fh(), r is " . Dumper($r));
 
 	return $self->SUPER::get_fh() 
 		unless substr($r->content_type(), 0, 6) eq 'image/';
 
 	my $format = $r->param('format');
 
-	$r->log_error("get_fh(), format is $format");
+#	$r->log_error("get_fh(), format is $format");
 
 	$format = 'raw' unless $format;		# Default format is raw
 
@@ -74,9 +74,9 @@ sub get_strref {
 	# here, but not in get_fh() -- maybe we do?
 	my $r    = Apache::Request->new($self->{apache});
 
-	$r->log_error("get_strref() called: file: " . $r->filename() . " type: " . $r->content_type());
+#	$r->log_error("get_strref() called: file: " . $r->filename() . " type: " . $r->content_type());
 
-	$r->log_error(Dumper($r));
+#	$r->log_error(Dumper($r));
 
 	return $self->SUPER::get_strref() if ! -f $r->filename();
 
@@ -84,17 +84,15 @@ sub get_strref {
 
 	# Get the filename, extract some stats
 	my $file = $r->filename();
-	$r->log_error("stat()ing $file");
+#	$r->log_error("stat()ing $file");
 	my $filesize = (stat($file))[7];
 	my $mod  = (stat(_))[9];
 
-	# Use the filename to retrive the path, and separate out the 
-	# filename
+	# Use the filename to retrive the path, and separate out the filename
 	my $path;
 	($path, $file) = $file =~ /(.*)\/(.*)/;	# Extract the path/file info
 
 	my $uri  = URI->new($r->uri());
-	$uri =~ s/(.*)\/.*$/$1/;		# Trim off the filename
 	$uri =~ s/^\///;			# Trim the leading '/'
 	$uri = join("\n", 
 		map { "<component><e>$_</e><u>" . uri_unescape($_) . "</u></component>" } split(/\//, $uri));
@@ -114,13 +112,13 @@ EOXML
 	}
 
         my $size = $r->param('size');
-                
+
         # Make sure the specified size is one we're configured to
         # support.  If it isn't then use the default size
         my $sizelist = $r->dir_config('GallerySizes');
         $sizelist = '133 640 800 1024' unless defined $sizelist;
         my @sizes = split(/\s+/, $sizelist);
-  
+
         if($size eq 'thumb') {
                 $size = $sizes[0];
         } else {
@@ -156,7 +154,7 @@ EOXML
 </imagesheet>
 EOXML
 
-	$r->log_error("Provider returning $xml");
+#	$r->log_error("Provider returning $xml");
 	return \$xml;
 }
 

@@ -2,7 +2,7 @@ package AxKit::App::Gallery::Plugin;
 
 # Copyright (c) 2003 Nik Clayton
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
 # are met:
@@ -11,7 +11,7 @@ package AxKit::App::Gallery::Plugin;
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -23,9 +23,9 @@ package AxKit::App::Gallery::Plugin;
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
-# 
-# $Id: Plugin.pm,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
- 
+#
+# $Id: Plugin.pm,v 1.5 2003/11/09 12:33:21 nik Exp $
+
 use strict;
 use Apache::Constants qw(OK DECLINED);
 use Apache::Request;
@@ -34,35 +34,34 @@ use URI::Escape;
 use Imager;				# Scaling
 use Image::Info;			# For width/height
 
-# The job here is two-fold. First, to decide if AxKit should process this 
-# resource (and thus return OK), second, if it shouldn't process the 
-# resource, and a jpeg should be created, then to create the jpeg, cache 
-# it, set $r->filename() to the location of the cached jpeg, and then 
+# The job here is two-fold. First, to decide if AxKit should process this
+# resource (and thus return OK), second, if it shouldn't process the
+# resource, and a jpeg should be created, then to create the jpeg, cache
+# it, set $r->filename() to the location of the cached jpeg, and then
 # return DECLINED.
 
 sub handler {
 	my $r = Apache::Request->new(shift);
 
-	$r->log_error('In the plugin handler');
+#	$r->log_error('In the plugin handler');
+#	$r->log_error('args: ' . $r->args());
 
 	# Always return OK for a directory
-	$r->log_error('Checking to see if it\'s a directory: ' . $r->filename());
+#	$r->log_error('Checking to see if it\'s a directory: ' . $r->filename());
 	return OK if -d $r->filename();
 
-	my $ct = $r->content_type();
-	$r->log_error("Not a directory, content type is $ct");
 	return OK unless substr($r->content_type(), 0, 6) eq 'image/';
 
-	$r->log_error('Filename is: ' . $r->filename());
+#	$r->log_error('Filename is: ' . $r->filename());
 
 	my $format = $r->param('format');
-	$r->log_error("Format param was $format");
+#	$r->log_error("Format param was $format");
 	# If no format parameter was passed in then AxKit can process the URI
 	# If the format param is 'html' then AxKit can process the URI
 	return OK if ! defined $format;
 	return OK if $format eq 'html';
 
-	$r->log_error('Filename is: ' . $r->filename());
+#	$r->log_error('Filename is: ' . $r->filename());
 
 	# Make sure the specified size is one we're configured to
 	# support.  If it isn't then use the default size
@@ -76,8 +75,12 @@ sub handler {
 		$size = $sizes[1] unless grep { $_ eq $size } @sizes;
 	}
 
-	$r->log_error("New size is $size");
-	$r->log_error('Filename is: ' . $r->filename());
+	# Get the larger of the image's width and height.  If this is smaller than
+	# the size user has requested, change the size to 'full'
+	# XXX should write code to do this
+
+#	$r->log_error("New size is $size");
+#	$r->log_error('Filename is: ' . $r->filename());
 
 	# If the size is 'full' then we're sending back the full size
 	# image.  There's no work to do, so just return DECLINED
@@ -86,25 +89,26 @@ sub handler {
 	# Now we know what size the image should be, check to see if a
 	# cached copy already exists.
 	my $cache_dir = $r->dir_config('GalleryCache');
-	my $uri = URI->new($r->uri());
-	my $cachepath = "$cache_dir/$uri";
+#	my $uri = URI->new($r->uri());
+#	my $cachepath = "$cache_dir/$uri";
+	my $cachepath = $cache_dir . $r->filename();
 
 	my $cachedfile = "$cachepath/$size.jpg";
 	$cachedfile = uri_unescape($cachedfile);
 
-	$r->log_error("Cachedfile is $cachedfile");
+#	$r->log_error("Cachedfile is $cachedfile");
 
 	my $image = Imager->new();
 
-	if(! -f $cachedfile 
+	if(! -f $cachedfile
 	    || -z $cachedfile
 	    || (stat($r->filename()))[9] > (stat($cachedfile))[9]) {	
-		$r->log_error("will open " . $r->filename());
+#		$r->log_error("will open " . $r->filename());
 
 		$image->open(file => $r->filename())
-			or die "image->open(): $!\n";
+			or die $image->errstr();
 
-		$r->log_error("opened original image");
+#		$r->log_error("opened original image");
 
 		my($w, $h) = ($image->getwidth(), $image->getheight());
 
@@ -116,11 +120,11 @@ sub handler {
 		        ? (xpixels => $size)
 		        : (ypixels => $size));
 
-		$r->log_error("scaled image");
+#		$r->log_error("scaled image");
 
 		$thumb->write(file => $cachedfile);
 	
-		$r->log_error("Wrote scaled image to $cachedfile");
+#		$r->log_error("Wrote scaled image to $cachedfile");
 	}
 
 	$r->filename($cachedfile);

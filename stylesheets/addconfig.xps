@@ -24,7 +24,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 # 
-# $Id: addconfig.xps,v 1.1.1.1 2003/03/29 17:11:49 nik Exp $
+# $Id: addconfig.xps,v 1.2 2003/07/11 16:39:05 nik Exp $
  
 use URI;
 use URI::Escape;
@@ -86,6 +86,26 @@ EOXML
 
 
 	$t->{postchildren} .= "</perl-vars>\n";
+
+	my $s = $r->server();
+	my $admin = $s->server_admin();
+	my $hostname = $s->server_hostname();
+	my $port = $s->port();
+
+	# Work out whether or not this is an SSL server
+#	my $sproc = $r->lookup_uri($r->uri);
+	my $ssl = $r->subprocess_env('HTTPS');
+
+	my $site = sprintf("%s://%s", $ssl ? 'https' : 'http', $hostname);
+
+	$t->{postchildren} .= <<EOXML;
+<server>
+  <site>$site</site>
+  <admin>$admin</admin>
+  <hostname>$hostname</hostname>
+  <port>$port</port>
+</server>
+EOXML
 
 	$t->{showtag} = 1;
 	return 1;
